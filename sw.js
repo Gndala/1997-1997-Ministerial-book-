@@ -1,5 +1,5 @@
 /* Service Worker — يخزّن التطبيق والمكتبات والخطوط للعمل بدون إنترنت */
-const VERSION = 'v3';
+const VERSION = 'v6';
 const CORE = `core-${VERSION}`;
 const RUNTIME = `runtime-${VERSION}`;
 

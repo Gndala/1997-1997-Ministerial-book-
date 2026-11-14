@@ -364,6 +364,13 @@ input[type=range]{padding:0;border:0;background:none;accent-color:#23408f;height
 .lt-yr{display:flex;justify-content:space-between;align-items:center;border:2px solid var(--lc);border-radius:12px;padding:2px 22px;margin:6px 0;background:rgba(255,255,255,.72);line-height:1.7}
 .lt-rib{display:table;margin:8px auto 4px;padding:1px 30px;border-radius:999px;background:var(--lc);color:#fff;font-family:'Cairo','IBM Plex Sans Arabic',sans-serif;font-weight:800;line-height:1.8}
 .lt-n{margin-top:8px;font-weight:700}
+.lt-mg{display:flex;gap:10px;margin:6px 0 2px;justify-content:center}
+.lt-mc{flex:1;max-width:190px;border:2px solid var(--lc);border-radius:14px;padding:3px 10px 4px;text-align:center;background:rgba(255,255,255,.72);line-height:1.55}
+.lt-mc small{display:block;font-size:.72em;color:#5b6480;font-weight:600}
+.lt .lt-mc b{font-size:1.08em}
+.lt .lt-mc.ok{background:var(--lc);border-color:var(--lc)}
+.lt .lt-mc.ok small{color:rgba(255,255,255,.82)}
+.lt .lt-mc.ok b{color:#fff}
 .rows2.r3{grid-template-columns:1.2fr 1.4fr 38px}
 .rows2{display:grid;grid-template-columns:1.1fr 1.2fr 1.4fr 38px;gap:8px;margin-bottom:8px;align-items:center}
 @media (max-width:760px){.rows2{grid-template-columns:1fr 1fr}.rows2 input[data-k=note]{grid-column:1/-1}}
@@ -474,6 +481,7 @@ main{max-width:1280px;width:100%;margin:0 auto;padding:22px 28px 60px}
     <button data-tab="sit"><i>📋</i>واقع الحال</button>
     <button data-tab="stu"><i>🧑‍🎓</i>استمرارية طالب</button>
     <button data-tab="stp"><i>🖼️</i>استمرارية طالب + صورة</button>
+    <button data-tab="med"><i>🩺</i>تأييد الفحص الطبي</button>
     <button data-tab="oth"><i>✉️</i>كتب أخرى</button>
     <div class="grp">أدوات</div>
     <button data-tab="seat"><i>🪑</i>موزع الجلوس</button>
@@ -682,6 +690,7 @@ main{max-width:1280px;width:100%;margin:0 auto;padding:22px 28px 60px}
 <section id="tab-sit" hidden></section>
 <section id="tab-stu" hidden></section>
 <section id="tab-stp" hidden></section>
+<section id="tab-med" hidden></section>
 <section id="tab-oth" hidden></section>
 
 <!-- ================= الأرشيف ================= -->
@@ -904,7 +913,7 @@ function certHeader(rec){
 function pageHTML(rec){
  if(rec.kind==='cont')return contPageHTML(rec);
  if(rec.kind==='calib')return calibHTML(rec);
- if(rec.kind==='sit'||rec.kind==='stu'||rec.kind==='stp')return letterPageHTML(rec);
+ if(rec.kind==='sit'||rec.kind==='stu'||rec.kind==='stp'||rec.kind==='med')return letterPageHTML(rec);
  if(rec.kind==='oth')return othPageHTML(rec);
  if(rec.kind==='grad')return gradPageHTML(rec);
  const fe=rec.tpl==='frame'?frEff('slip',rec.frame):'';
@@ -1034,7 +1043,7 @@ async function renderImgs(recs,onp){
 }
 const SPEC_A4={w:794,h:1122,mmW:210,mmH:297,scale:2,k:1};
 function pageSpec(rec){
- if(rec&&(rec.kind==='sit'||rec.kind==='stu'||rec.kind==='stp'||rec.kind==='oth')){
+ if(rec&&(rec.kind==='sit'||rec.kind==='stu'||rec.kind==='stp'||rec.kind==='med'||rec.kind==='oth')){
   const M=designMetrics(rec.design,rec.kind),land=M.o==='l',sz=rec.size||(land?'A4T':'A4');
   if(land&&(sz==='A4T'||sz==='A4H'||sz==='A4H2'))return SPEC_A4;
   const dim={A5:land?[210,148.5]:[148.5,210],A4:land?[297,210]:[210,297],A3:land?[420,297]:[297,420]}[sz]||(land?[210,148.5]:[210,297]),k=dim[0]/210;
@@ -1052,7 +1061,7 @@ function pdfFrom(imgs,specs){
  return pdf;
 }
 const safe=s=>String(s).replace(/[\\\/:*?"<>|]/g,' ').replace(/\s+/g,' ').trim();
-const fname=r=>r.kind==='oth'?((OTH[r.otype]||{name:'كتاب'}).name+' - '+safe(r.name||'—')+'.pdf'):(r.kind==='sit'||r.kind==='stu'||r.kind==='stp')?(LCFG[r.kind].sub+' - '+safe(r.name||'طالب')+'.pdf'):r.kind==='cont'?'تأييد استمرارية - '+safe(r.name||'موظف')+'.pdf':r.kind==='grad'?'تأييد تخرج - '+safe(r.name||'طالب')+'.pdf':pad(r.no)+' - '+safe(r.name)+'.pdf';
+const fname=r=>r.kind==='oth'?((OTH[r.otype]||{name:'كتاب'}).name+' - '+safe(r.name||'—')+'.pdf'):(r.kind==='sit'||r.kind==='stu'||r.kind==='stp'||r.kind==='med')?(LCFG[r.kind].sub+' - '+safe(r.name||'طالب')+'.pdf'):r.kind==='cont'?'تأييد استمرارية - '+safe(r.name||'موظف')+'.pdf':r.kind==='grad'?'تأييد تخرج - '+safe(r.name||'طالب')+'.pdf':pad(r.no)+' - '+safe(r.name)+'.pdf';
 function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},5000)}
 async function exportRecs(recs,mode){
  if(!libsOK()){toast('تعذّر تحميل مكتبات PDF. تأكد من اتصال الإنترنت ثم أعد فتح الصفحة');return false}
@@ -1356,7 +1365,7 @@ function enName(ar){
  }
  return [out.join(' '),priv?'PRIVATE':'',type,gender].filter(Boolean).join(' ').toUpperCase();
 }
-const FRS_KEYS=['grad','cont','slip','sit','stu','stp','oth'];
+const FRS_KEYS=['grad','cont','slip','sit','stu','stp','med','oth'];
 store.frames=Object.assign({},LS.get('inzar.frames',{}));
 FRS_KEYS.forEach(k=>{store.frames[k]=Object.assign({sel:k==='slip'?'new':'default',nameOn:false},store.frames[k])});
 if(!LS.get('inzar.mig.d4',0)){if(store.frames.cont.sel==='default')store.frames.cont.sel='d4';LS.set('inzar.mig.d4',1);LS.set('inzar.frames',store.frames)}
@@ -1459,7 +1468,7 @@ const LD={
 LD.d6=Object.assign({},LD.d2);
 LD.cP=Object.assign({},LD.d2,{lc:'#14284f'});
 LD.cL={o:'l',W:794,H:561,lc:'#14284f',fs:15,box:{l:70,t:176,w:654,h:296},meta:{m:'draw',l:70,t:136,w:170},dir:{m:'ln',l:70,t:478,w:200},by:{l:320,t:530}};
-const FRORI={};['sit','stu','stp','oth'].forEach(k=>{FRORI[k]=LS.get('inzar.frameori.'+k,'p')});
+const FRORI={};['sit','stu','stp','med','oth'].forEach(k=>{FRORI[k]=LS.get('inzar.frameori.'+k,'p')});
 function designMetrics(d,sec){
  if(d==='custom')return FRORI[sec]==='l'?LD.cL:LD.cP;
  return LD[d]||LD.d6;
@@ -1495,23 +1504,29 @@ function letterHTML(o){
 const LCFG={
  sit:{title:'بيانات واقع الحال',sub:'واقع حال',subject:'م / واقع حال',photo:false,rows:true,sit:true,compat:['d6','d2','d3'],def:'d6'},
  stu:{title:'بيانات تأييد استمرارية الطالب',sub:'تأييد استمرارية طالب',subject:'م / تأييد استمرارية',photo:false,rows:false,compat:['d1','d4','d6','d2','d3'],def:'d1'},
- stp:{title:'بيانات تأييد استمرارية الطالب بصورة',sub:'تأييد استمرارية طالب بصورة',subject:'م / تأييد استمرارية',photo:true,rows:false,compat:['d5','d6','d2','d3'],def:'d5'}
+ stp:{title:'بيانات تأييد استمرارية الطالب بصورة',sub:'تأييد استمرارية طالب بصورة',subject:'م / تأييد استمرارية',photo:true,rows:false,compat:['d5','d6','d2','d3'],def:'d5'},
+ med:{title:'بيانات تأييد الفحص الطبي',sub:'تأييد فحص طبي',subject:'م / تأييد للفحص الطبي',photo:false,rows:false,med:true,compat:['d6','d2','d3','d4','d1'],def:'d6'}
 };
 const PARA={
  sit:'نؤيد لكم بأن الطالب ({الاسم}) أحد طلبة مدرستنا في الصف ({الصف}) للعام الدراسي ({العام}) وأن واقع حاله الدراسي كما مبيّن في الجدول أدناه، وبناءً على طلبه زُوِّد بهذا التأييد.',
  stu:'نؤيد لكم بأن الطالب ({الاسم}) أحد طلبة مدرستنا في الصف ({الصف}) للعام الدراسي ({العام}) مستمر بالدوام وبناءً على طلبه زُوِّد بهذا التأييد.',
+ med:'نؤيد لكم بأن الطالب ({الاسم}) أحد طلبة مدرستنا في الصف ({الصف}) للعام الدراسي ({العام}) وقد دخل الامتحان الوزاري وكانت نتيجته ({النتيجة}) في الدور ({الدور}) وهو يروم الدخول إلى الجامعة، لذا يرجى التفضل بإجراء الفحص الطبي له، وبناءً على طلبه زُوِّد بهذا التأييد.',
  stp:'نؤيد لكم بأن الطالب ({الاسم}) الملصقة صورته أعلاه أحد طلبة مدرستنا في الصف ({الصف}) للعام الدراسي ({العام}) مستمر بالدوام وبناءً على طلبه زُوِّد بهذا التأييد.'
 };
 function fillTpl(t,v){return String(t).split(/(\{الاسم\}|\{الصف\}|\{العام\})/).map(x=>x==='{الاسم}'?v.name:x==='{الصف}'?v.grade:x==='{العام}'?v.year:esc(x)).join('').replace(/\n/g,'<br>')}
 function yearsWord(n){return n===1?'سنة واحدة':n===2?'سنتان':n<=10?numWords(n)+' سنوات':numWords(n)+' سنة'}
+function medCard(rec,D){
+ const cell=(l,v,ok)=>'<div class="lt-mc'+(ok?' ok':'')+'"><small>'+l+'</small><b>'+v+'</b></div>';
+ return '<span class="lt-rib">نتيجة الامتحان الوزاري</span><div class="lt-mg">'+cell('الدور',esc(rec.round||'الأول'))+cell('النتيجة','نجاح',1)+(rec.examNo?cell('الرقم الامتحاني',D(esc(rec.examNo))):'')+'</div>';
+}
 function sitLines(rec,val,D,v){
  const dt=x=>x?'<b>'+D(fmtDate(x))+'</b>':'<span class="bl" style="width:90px"></span>';
  let h='';
  if(rec.bnoOn)h+='<div>كتابكم ذي العدد ('+val(rec.bno,70,true)+') في تاريخ ('+dt(rec.bdate)+')</div>';
  h+='<div>نرفق إليكم واقع حال الطالب ('+v.name+') المولود بتاريخ ('+dt(rec.dob)+')</div>';
  h+='<div>في الصف ('+v.grade+')'+(rec.yearOn===false?'':' للعام الدراسي ('+v.year+')')+'</div>';
- h+='<div>قُبل في الصف ('+val(rec.admGrade,90)+') بموجب الوثيقة ذات العدد ('+val(rec.admNo,70,true)+') بتاريخ ('+dt(rec.admDate)+')</div>';
- h+='<div>رقم القبول في القيد العام ('+val(rec.regNo,70,true)+')</div>';
+ h+='<div>قُبل في الصف ('+val(rec.admGrade,90)+') بموجب الوثيقة ذات العدد ('+val(rec.admNo,70,true)+') بتاريخ ('+dt(rec.admDate)+') والصادرة من مدرسة ('+val(rec.admSchool,150)+')</div>';
+ h+='<div>رقم القبول في القيد العام ('+val(rec.regNo,70,true)+') ورقم الصفحة ('+val(rec.pageNo,70,true)+')</div>';
  return h;
 }
 function failBoxes(rec,D){
@@ -1538,8 +1553,8 @@ function letterPageHTML(rec){
  const val=(x,w,num)=>x?'<b>'+(num?D(esc(x)):esc(x))+'</b>':'<span class="bl" style="width:'+w+'px"></span>';
  const v={name:val(rec.name,170),grade:val(rec.grade,90),year:val(rec.year,90,true)};
  const page=letterHTML({d:rec.design,sec:rec.kind,M,D,dy:rec.dy,fs:rec.fs||M.fs,no:rec.no,date:rec.date,photo:rec.photo,photoOn:cfg.photo,
-  toHTML:'<span class="hl">إلى /</span> '+val(rec.to,230),subjectHTML:'<b>'+cfg.subject+'</b>',typeLine:'',greet:'تحية طيبة ...',
-  para:rec.kind==='sit'?sitLines(rec,val,D,v):fillTpl(PARA[rec.kind],v),extra:rec.kind==='sit'?failBoxes(rec,D):'',closing:rec.kind==='sit'?'للتفضل بالعلم والاطلاع ... مع التقدير.':'للتفضل بالعلم والاطلاع مع التقدير',director:sn.director});
+  toHTML:rec.kind==='med'?'<span class="hl">إلى /</span> <b>مركز الفحص الطبي</b> ( '+val(rec.to,170)+' )':'<span class="hl">إلى /</span> '+val(rec.to,230),subjectHTML:'<b>'+cfg.subject+'</b>',typeLine:'',greet:'تحية طيبة ...',
+  para:rec.kind==='sit'?sitLines(rec,val,D,v):rec.kind==='med'?fillTpl(PARA.med,v).replace('{النتيجة}','<b>النجاح</b>').replace('{الدور}','<b>'+esc(rec.round||'الأول')+'</b>'):fillTpl(PARA[rec.kind],v),extra:rec.kind==='sit'?failBoxes(rec,D):rec.kind==='med'?medCard(rec,D):'',closing:rec.kind==='sit'?'للتفضل بالعلم والاطلاع ... مع التقدير.':rec.kind==='med'?'للتفضل بالاطلاع وإجراء ما يلزم مع التقدير':'للتفضل بالعلم والاطلاع مع التقدير',director:sn.director});
  if(M.o==='l'&&rec.size==='A4T'){
   const c=rec.cal||{sc:100,dx:0,dy:0},mm=3.7795;
   return '<div class="page sheet" style="width:794px;height:1122px;background:#fff"><div style="position:absolute;left:0;top:0;width:794px;height:'+M.H+'px;transform-origin:50% 0;transform:translate('+Math.round(c.dx*mm*10)/10+'px,'+Math.round(c.dy*mm*10)/10+'px) scale('+(c.sc/100)+')">'+page+'</div></div>';
@@ -1571,18 +1586,21 @@ function makeLetterSection(p){
  const q=id=>$('#'+p+'_'+id);
  root.innerHTML='<div class="grid"><div>'+
   '<div class="slab"><h2>'+cfg.title+'</h2><div class="form">'+
-   '<label class="f wide">الجهة (إلى)<input id="'+p+'_to" list="toList" placeholder="مثال: مديرية التربية / الجهة المعنية ..."></label>'+
+   (p==='med'?'<label class="f wide">اسم مركز الفحص الطبي (الذي اختاره الطالب)<input id="'+p+'_to" list="toList" placeholder="مثال: مركز ... للفحص الطبي — اتركه فارغاً لتكتبه بخط اليد"></label>':'<label class="f wide">الجهة (إلى)<input id="'+p+'_to" list="toList" placeholder="مثال: مديرية التربية / الجهة المعنية ..."></label>')+
    '<div class="f">العدد<input id="'+p+'_no" placeholder="اتركه فارغاً للكتابة اليدوية"></div>'+
    '<div class="f">التاريخ<input type="date" id="'+p+'_date"><label class="chkrow"><input type="checkbox" id="'+p+'_dateblank"> اتركه فارغاً لأكتبه بخط اليد</label></div>'+
    '<label class="f wide">اسم الطالب<input id="'+p+'_name" placeholder="الاسم الرباعي"></label>'+
    '<label class="f">الصف<input id="'+p+'_grade" list="stuGrades" placeholder="مثال: الخامس العلمي"></label>'+
    '<label class="f">العام الدراسي<select id="'+p+'_year"></select></label>'+
+   (cfg.med?'<label class="f">دخل الامتحان الوزاري — الدور<select id="med_round"><option>الأول</option><option>الثاني</option><option>الثالث</option></select></label><div class="f">الرقم الامتحاني (اختياري)<input id="med_examNo" placeholder="يظهر في بطاقة النتيجة إن كتبته"></div>':'')+
    (cfg.sit?'<label class="chkrow wide" style="grid-column:1/-1;margin-top:0"><input type="checkbox" id="sit_yearOn" checked> ذكر «للعام الدراسي» في سطر الصف</label>'+
     '<div class="f">تاريخ ولادة الطالب<input type="date" id="sit_dob"></div>'+
     '<label class="f">قُبل في الصف<input id="sit_admGrade" list="stuGrades" placeholder="مثال: الرابع العلمي"></label>'+
     '<div class="f">رقم وثيقة القبول<input id="sit_admNo"></div>'+
     '<div class="f">تاريخ وثيقة القبول<input type="date" id="sit_admDate"></div>'+
-    '<div class="f wide">رقم القبول في القيد العام<input id="sit_regNo"></div>'+
+    '<div class="f wide">والصادرة من مدرسة<input id="sit_admSchool" placeholder="اسم المدرسة التي صدرت منها وثيقة القبول"></div>'+
+    '<div class="f">رقم القبول في القيد العام<input id="sit_regNo"></div>'+
+    '<div class="f">رقم الصفحة<input id="sit_pageNo"></div>'+
     '<label class="chkrow wide" style="grid-column:1/-1;margin-top:0"><input type="checkbox" id="sit_bnoOn" checked> إضافة سطر «كتابكم ذي العدد ( ) في تاريخ ( )» (يمكن حذفه)</label>'+
     '<div class="f" id="sit_w_bno">رقم الكتاب<input id="sit_bno"></div>'+
     '<div class="f" id="sit_w_bdate">تاريخ الكتاب<input type="date" id="sit_bdate"></div>':'')+
@@ -1625,11 +1643,11 @@ function makeLetterSection(p){
  }
  function read(){
   const dsg=q('design').value,M=designMetrics(dsg,p),blank=q('dateblank').checked;
-  return {kind:p,tpl:p,id:st.editId||uid(),to:q('to').value.trim(),no:q('no').value.trim(),dateBlank:blank,date:blank?'':q('date').value,name:q('name').value.trim(),grade:q('grade').value.trim(),year:q('year').value,design:dsg,size:q('size').value,fs:+q('fs').value||M.fs,dy:+q('dy').value||0,cal:calVals(),photo:cfg.photo?st.photo:'',rows:cfg.rows?st.rows.map(r=>Object.assign({},r)):[],para:'',...(cfg.sit?{bnoOn:q('bnoOn').checked,bno:q('bno').value.trim(),bdate:q('bdate').value,yearOn:q('yearOn').checked,dob:q('dob').value,admGrade:q('admGrade').value.trim(),admNo:q('admNo').value.trim(),admDate:q('admDate').value,regNo:q('regNo').value.trim()}:{}),snap:{director:store.settings.director,digits:store.settings.digits},created:Date.now()};
+  return {kind:p,tpl:p,id:st.editId||uid(),to:q('to').value.trim(),no:q('no').value.trim(),dateBlank:blank,date:blank?'':q('date').value,name:q('name').value.trim(),grade:q('grade').value.trim(),year:q('year').value,design:dsg,size:q('size').value,fs:+q('fs').value||M.fs,dy:+q('dy').value||0,cal:calVals(),photo:cfg.photo?st.photo:'',rows:cfg.rows?st.rows.map(r=>Object.assign({},r)):[],para:'',...(cfg.sit?{bnoOn:q('bnoOn').checked,bno:q('bno').value.trim(),bdate:q('bdate').value,yearOn:q('yearOn').checked,dob:q('dob').value,admGrade:q('admGrade').value.trim(),admNo:q('admNo').value.trim(),admDate:q('admDate').value,regNo:q('regNo').value.trim(),admSchool:q('admSchool').value.trim(),pageNo:q('pageNo').value.trim()}:{}),...(cfg.med?{round:q('round').value,examNo:q('examNo').value.trim()}:{}),snap:{director:store.settings.director,digits:store.settings.digits},created:Date.now()};
  }
  function render(){
   let rec=read();const sample=!rec.name;
-  if(sample){rec=Object.assign(rec,{name:'محمد حسين علي جاسم',grade:rec.grade||'الخامس العلمي',to:rec.to||'مديرية التربية'});if(cfg.rows&&!rec.rows.length)rec.rows=[{year:(curAcad()-2)+' - '+(curAcad()-1),grade:'السادس العلمي'},{year:(curAcad()-1)+' - '+curAcad(),grade:'السادس العلمي'}];if(cfg.sit){const sm={dob:'2007-03-15',admGrade:'الرابع العلمي',admNo:'1234',admDate:'2022-09-10',regNo:'567',bno:'458',bdate:todayISO()};Object.keys(sm).forEach(k=>{if(!rec[k])rec[k]=sm[k]})}}
+  if(sample){rec=Object.assign(rec,{name:'محمد حسين علي جاسم',grade:rec.grade||'الخامس العلمي',to:rec.to||(p==='med'?'مركز الشفاء':'مديرية التربية')});if(cfg.rows&&!rec.rows.length)rec.rows=[{year:(curAcad()-2)+' - '+(curAcad()-1),grade:'السادس العلمي'},{year:(curAcad()-1)+' - '+curAcad(),grade:'السادس العلمي'}];if(cfg.sit){const sm={dob:'2007-03-15',admGrade:'الرابع العلمي',admNo:'1234',admDate:'2022-09-10',regNo:'567',pageNo:'45',admSchool:'متوسطة الشهيد الأولى',bno:'458',bdate:todayISO()};Object.keys(sm).forEach(k=>{if(!rec[k])rec[k]=sm[k]})}}
   q('tilt').innerHTML=letterPageHTML(rec);q('sample').hidden=!sample;q('fsv').textContent=rec.fs;q('dyv').textContent=rec.dy;q('cscv').textContent=rec.cal.sc+'%';q('cdxv').textContent=rec.cal.dx;q('cdyv').textContent=rec.cal.dy;
   stg.fit(pageSpec(rec).h);
  }
@@ -1694,8 +1712,8 @@ function makeLetterSection(p){
  }
  q('pdf').onclick=()=>generate('pdf');
  q('print').onclick=()=>generate('print');
- function sitReset(){['bno','admGrade','admNo','regNo','bdate','dob','admDate'].forEach(id=>{q(id).value=''});q('bnoOn').checked=true;q('yearOn').checked=true;q('w_bno').hidden=false;q('w_bdate').hidden=false}
- function sitLoad(r){q('bno').value=r.bno||'';q('bdate').value=r.bdate||'';q('dob').value=r.dob||'';q('admGrade').value=r.admGrade||'';q('admNo').value=r.admNo||'';q('admDate').value=r.admDate||'';q('regNo').value=r.regNo||'';q('bnoOn').checked=!!r.bnoOn;q('yearOn').checked=r.yearOn!==false;q('w_bno').hidden=!r.bnoOn;q('w_bdate').hidden=!r.bnoOn}
+ function sitReset(){['bno','admGrade','admNo','regNo','bdate','dob','admDate','admSchool','pageNo'].forEach(id=>{q(id).value=''});q('bnoOn').checked=true;q('yearOn').checked=true;q('w_bno').hidden=false;q('w_bdate').hidden=false}
+ function sitLoad(r){q('bno').value=r.bno||'';q('bdate').value=r.bdate||'';q('dob').value=r.dob||'';q('admGrade').value=r.admGrade||'';q('admNo').value=r.admNo||'';q('admDate').value=r.admDate||'';q('regNo').value=r.regNo||'';q('admSchool').value=r.admSchool||'';q('pageNo').value=r.pageNo||'';q('bnoOn').checked=!!r.bnoOn;q('yearOn').checked=r.yearOn!==false;q('w_bno').hidden=!r.bnoOn;q('w_bdate').hidden=!r.bnoOn}
  function clear(){
   st.editId=null;st.photo='';st.rows=[];
   ['to','no','name','grade'].forEach(id=>q(id).value='');
@@ -1703,6 +1721,7 @@ function makeLetterSection(p){
   if(cfg.photo)q('photo').value='';
   fillYear();if(cfg.rows){$('#sit_para').value=PARA.sit;rowsHTML()}
   if(cfg.sit)sitReset();
+  if(cfg.med){q('round').value='الأول';q('examNo').value=''}
   render();
  }
  q('new').onclick=clear;
@@ -1714,6 +1733,7 @@ function makeLetterSection(p){
   const rc=r.cal||{sc:100,dx:0,dy:0};q('csc').value=rc.sc;q('cdx').value=rc.dx;q('cdy').value=rc.dy;updCal();
   if(cfg.rows){$('#sit_para').value=r.para||PARA.sit;rowsHTML()}
   if(cfg.sit)sitLoad(r);
+  if(cfg.med){q('round').value=r.round||'الأول';q('examNo').value=r.examNo||''}
   render();window.scrollTo(0,0);toast('تم تحميل المحفوظ للتعديل');
  }
  function renderList(){
@@ -1735,7 +1755,7 @@ function makeLetterSection(p){
  init();renderList();
  return {open(){stg.fit(pageSpec(read()).h);render();renderList()},refreshYears(){const v=q('year').value;fillYear(v)},load};
 }
-['sit','stu','stp'].forEach(p=>{LTS[p]=makeLetterSection(p)});
+['sit','stu','stp','med'].forEach(p=>{LTS[p]=makeLetterSection(p)});
 
 /* ---------- other official letters (oth) ---------- */
 const OTH={
@@ -1948,6 +1968,7 @@ const HOME_SECS=[
  ['sit','واقع الحال',()=>store.lt.sit,r=>(r.grade||'')+' — '+(r.year||'')],
  ['stu','استمرارية طالب',()=>store.lt.stu,r=>(r.grade||'')+' — '+(r.year||'')],
  ['stp','استمرارية طالب + صورة',()=>store.lt.stp,r=>(r.grade||'')+' — '+(r.year||'')],
+ ['med','تأييد الفحص الطبي',()=>store.lt.med,r=>(r.grade||'')+' — '+(r.to||'')],
  ['oth','كتب أخرى',()=>store.oth,r=>(OTH[r.otype]||{name:''}).name]
 ];
 let HOME_ITEMS=[];
@@ -2009,7 +2030,7 @@ $('#bkFile').addEventListener('change',e=>{
 bkInfo();
 
 /* ---------- section locks ---------- */
-const SECS={create:'إنشاء الإنذارات',grad:'تأييد تخرج',cont:'استمرارية مدرس/موظف',oth:'كتب أخرى',sit:'واقع الحال',stu:'استمرارية طالب',stp:'استمرارية طالب + صورة',seat:'موزع الجلوس',archive:'الأرشيف',settings:'الإعدادات'};
+const SECS={create:'إنشاء الإنذارات',grad:'تأييد تخرج',cont:'استمرارية مدرس/موظف',oth:'كتب أخرى',sit:'واقع الحال',stu:'استمرارية طالب',stp:'استمرارية طالب + صورة',med:'تأييد الفحص الطبي',seat:'موزع الجلوس',archive:'الأرشيف',settings:'الإعدادات'};
 store.locks=LS.get('inzar.locks',{});
 const unlocked=new Set();
 let curTab='home',idleT,fails=0,failUntil=0;
@@ -2040,13 +2061,13 @@ function resetIdle(){
 }
 ['pointerdown','keydown','touchstart'].forEach(ev=>document.addEventListener(ev,resetIdle,{passive:true}));
 function lockAll(){unlocked.clear();show(curTab)}
-const PAGES={home:['الرئيسية','ملخص ما أُنشئ وبحث شامل في كل الأقسام'],create:['إنذار وتعهد','وصل إنذار غياب ووصل تعهد على ورقة واحدة'],grad:['تأييد تخرج','تأييد تخرج مع جدول الدرجات والمعدل'],cont:['استمرارية مدرس / موظف','تأييد استمرارية الدوام للمدرسين والموظفين'],sit:['واقع الحال','واقع حال الطالب مع سنوات الرسوب'],stu:['استمرارية طالب','تأييد استمرارية طالب بحجم الوصل'],stp:['استمرارية طالب بصورة','تأييد استمرارية طالب مع صورته'],oth:['كتب أخرى','استدعاء ولي أمر، حسن سلوك، مباشرة، شكر، نقل'],seat:['موزع الجلوس','توزيع جلوس الطلاب على القاعات'],archive:['الأرشيف','أرشيف الوصولات وتصدير البيانات'],settings:['الإعدادات','المدرسة والترقيم والقفل والنسخ الاحتياطي']};
+const PAGES={home:['الرئيسية','ملخص ما أُنشئ وبحث شامل في كل الأقسام'],create:['إنذار وتعهد','وصل إنذار غياب ووصل تعهد على ورقة واحدة'],grad:['تأييد تخرج','تأييد تخرج مع جدول الدرجات والمعدل'],cont:['استمرارية مدرس / موظف','تأييد استمرارية الدوام للمدرسين والموظفين'],sit:['واقع الحال','واقع حال الطالب مع سنوات الرسوب'],stu:['استمرارية طالب','تأييد استمرارية طالب بحجم الوصل'],stp:['استمرارية طالب بصورة','تأييد استمرارية طالب مع صورته'],med:['تأييد الفحص الطبي','كتاب للطالب إلى مركز الفحص الطبي للدخول إلى الجامعة'],oth:['كتب أخرى','استدعاء ولي أمر، حسن سلوك، مباشرة، شكر، نقل'],seat:['موزع الجلوس','توزيع جلوس الطلاب على القاعات'],archive:['الأرشيف','أرشيف الوصولات وتصدير البيانات'],settings:['الإعدادات','المدرسة والترقيم والقفل والنسخ الاحتياطي']};
 function show(t){
  curTab=t;
  {const pg=PAGES[t];if(pg){$('#pageTitle').textContent=pg[0];$('#pageSub').textContent=pg[1]}}
  $$('.tabs button[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
  const lk=isLocked(t);
- ['home','create','grad','cont','sit','stu','stp','oth','seat','archive','settings'].forEach(k=>$('#tab-'+k).hidden=k!==t||lk);
+ ['home','create','grad','cont','sit','stu','stp','med','oth','seat','archive','settings'].forEach(k=>$('#tab-'+k).hidden=k!==t||lk);
  $('#lockView').hidden=!lk;
  updateLockUI();
  if(lk){
@@ -2058,7 +2079,7 @@ function show(t){
  if(t==='create')fitStage();
  if(t==='grad'){fitStage2();renderGradPreview();renderGrads()}
  if(t==='cont'){fitStage3();renderContPreview();renderConts()}
- if(t==='sit'||t==='stu'||t==='stp')LTS[t].open();
+ if(t==='sit'||t==='stu'||t==='stp'||t==='med')LTS[t].open();
  if(t==='seat')openSeat();
  if(t==='archive')renderArchive();
  if(t==='settings'){loadSettingsForm();renderLockPanel()}
