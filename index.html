@@ -534,6 +534,8 @@ main{max-width:1280px;width:100%;margin:0 auto;padding:22px 28px 60px}
 #expSlab{overflow:hidden}
 .exr{background:#fff;border-radius:14px;padding:10px 12px;margin-bottom:10px;border:2px solid transparent}
 .exr.sel{border-color:var(--navy)}
+.exr.col{padding:6px 12px;cursor:pointer;margin-bottom:6px}
+.exr.col .exh{margin:0}
 .exr .exh{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:6px}
 .exr .exh small{color:var(--mut);font-size:12.5px}
 .exr .exg{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,1.3fr);gap:8px;align-items:center;margin-top:6px;font-size:13px}
@@ -2122,26 +2124,44 @@ store.exps=LS.get('inzar.exps',[]);
 const EXN=['الإنذار الأولي','الإنذار الثانوي','الإنذار النهائي'];
 function nrm(s){return String(s||'').replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ة/g,'ه').replace(/\s+/g,' ').trim()}
 function expInit(r){if(!r.exp||!r.exp.w){r.exp={no:'',auto:false,w:[{n:'',d:''},{n:'',d:''},{n:'',d:''}]};expFromArchive(r,false)}return r.exp}
+var EXAM=null,EXAK='';
+function expArchMap(){
+ const ar=store.archive||[],k=ar.length+'|'+(ar.length?ar[ar.length-1].id:'');
+ if(EXAM&&EXAK===k)return EXAM;
+ EXAM=new Map();EXAK=k;
+ ar.forEach(a=>{const n=nrm(a.name);if(!n)return;let l=EXAM.get(n);if(!l)EXAM.set(n,l=[]);l.push(a)});
+ return EXAM;
+}
 function expFromArchive(r,force){
- const e=r.exp,m=(store.archive||[]).filter(a=>nrm(a.name)===nrm(r.name)),slot=l=>l===0?0:l===1?1:2;let n=0;
+ const e=r.exp,m=expArchMap().get(nrm(r.name))||[],slot=l=>l===0?0:l===1?1:2;let n=0;
  for(let s=0;s<3;s++){
   const c=m.filter(a=>slot(+a.level||0)===s).sort((a,b)=>b.no-a.no)[0];
   if(c&&(force||(!e.w[s].n&&!e.w[s].d))){e.w[s].n=pad(c.no);e.w[s].d=c.date||'';n++}
  }
  return n;
 }
-function expNamed(){return S.rows.filter(r=>r.name.trim())}
-function expQueue(){clearTimeout(expT);expT=setTimeout(expRefresh,250)}
-function expRefresh(){
- if(!$('#expList'))return;
- const rows=expNamed();$('#expCnt').textContent=rows.length;
- if(!rows.some(r=>r.id===EX.sel))EX.sel=rows.length?rows[0].id:null;
- $('#expList').innerHTML=rows.length?rows.map(r=>{
-  const e=expInit(r);
-  return '<div class="exr'+(r.id===EX.sel?' sel':'')+'" data-id="'+r.id+'"><div class="exh"><b>'+esc(r.name)+'</b><small>'+esc((r.grade||'—')+(r.section?' / '+r.section:''))+' — '+(parseInt(toEn(r.abs),10)||0)+' يوم غياب</small></div>'+
+function expNamed(){return S.rows.filter(r=>String(r.name||'').trim())}
+function expQueue(){clearTimeout(expT);expT=setTimeout(()=>expRefresh(),500)}
+var EXSIG='';
+function expCard(r,full){
+ const e=expInit(r),ab=(parseInt(toEn(r.abs),10)||0);
+ const h='<div class="exh"><b>'+esc(r.name)+'</b><small>'+esc((r.grade||'—')+(r.section?' / '+r.section:''))+' — '+ab+' يوم غياب</small></div>';
+ if(!full)return '<div class="exr col" data-id="'+r.id+'">'+h+'</div>';
+ return '<div class="exr sel" data-id="'+r.id+'">'+h+
   '<div class="exg"><label>العدد (الصادر)<input data-x="no" value="'+esc(e.no)+'" placeholder="رقم الكتاب الصادر"></label></div>'+
   [0,1,2].map(i=>'<div class="exg"><span>'+EXN[i]+'</span><input data-x="n'+i+'" inputmode="numeric" placeholder="العدد" value="'+esc(e.w[i].n)+'" aria-label="عدد '+EXN[i]+'"><input type="date" data-x="d'+i+'" value="'+esc(e.w[i].d)+'" aria-label="تاريخ '+EXN[i]+'"></div>').join('')+'</div>';
- }).join(''):'<p class="hint">أضف طلاباً في القائمة أعلاه لتظهر هنا.</p>';
+}
+function expRefresh(force){
+ if(!$('#expList'))return;
+ const tab=$('#tab-create');if(tab&&tab.hidden){EXSIG='';return}
+ const rows=expNamed();$('#expCnt').textContent=rows.length;
+ if(!rows.some(r=>r.id===EX.sel))EX.sel=rows.length?rows[0].id:null;
+ const sig=rows.map(r=>r.id+'|'+r.name+'|'+r.grade+'|'+r.section+'|'+r.abs).join('~')+'#'+EX.sel;
+ if(force===true||sig!==EXSIG){
+  EXSIG=sig;
+  const many=rows.length>8;
+  $('#expList').innerHTML=rows.length?rows.map(r=>expCard(r,!many||r.id===EX.sel)).join(''):'<p class="hint">أضف طلاباً في القائمة أعلاه لتظهر هنا.</p>';
+ }
  $('#expDate').value=EX.date;
  expDesignsRender();expSavedRender();expFit();expPrev();
 }
@@ -2149,19 +2169,19 @@ $('#expList').addEventListener('input',e=>{
  const t=e.target,c=t.closest('.exr');if(!c||!t.dataset.x)return;
  const r=S.rows.find(x=>x.id===c.dataset.id);if(!r)return;const ex=expInit(r),k=t.dataset.x;
  if(k==='no'){ex.no=t.value;ex.auto=false}else{const i=+k[1];ex.w[i][k[0]]=t.value}
- EX.sel=r.id;saveDraft();expPrev();
+ saveDraft();expPrev();
 });
-$('#expList').addEventListener('focusin',e=>{
+$('#expList').addEventListener('click',e=>{
  const c=e.target.closest('.exr');if(!c||EX.sel===c.dataset.id)return;
- EX.sel=c.dataset.id;$$('.exr',$('#expList')).forEach(x=>x.classList.toggle('sel',x===c));expPrev();
+ EX.sel=c.dataset.id;expRefresh(true);
 });
 $('#expDate').addEventListener('input',e=>{EX.date=e.target.value||todayISO();expPrev()});
 $('#expAuto').onclick=()=>{
  const base=parseInt(store.settings.outNext,10)||1;let k=0;
  expNamed().forEach(r=>{const e=expInit(r);if(!e.no||e.auto){e.no=fmtOutNo(base+k);e.auto=true;k++}});
- saveDraft();expRefresh();toast(k?'رُقّم '+k+' كتاب تلقائياً':'كل الكتب مرقّمة');
+ saveDraft();expRefresh(true);toast(k?'رُقّم '+k+' كتاب تلقائياً':'كل الكتب مرقّمة');
 };
-$('#expPull').onclick=()=>{let n=0;expNamed().forEach(r=>{expInit(r);n+=expFromArchive(r,true)});saveDraft();expRefresh();toast(n?'تم سحب '+n+' إنذار من الأرشيف':'لم يُعثر على إنذارات مطابقة بالاسم في الأرشيف')};
+$('#expPull').onclick=()=>{let n=0;expNamed().forEach(r=>{expInit(r);n+=expFromArchive(r,true)});saveDraft();expRefresh(true);toast(n?'تم سحب '+n+' إنذار من الأرشيف':'لم يُعثر على إنذارات مطابقة بالاسم في الأرشيف')};
 function expSnap(){const sn=snapshot();sn.province=store.settings.province||'';return sn}
 function expOpt(){return {design:EX.design,to:EX.to,copies:EX.copies.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),logo:EX.logo,wm:EX.wm,top:parseInt(EX.top,10)||230,date:EX.date}}
 function expRec(r){
@@ -2269,7 +2289,7 @@ async function expGen(mode){
  const rows=expNamed();
  if(!rows.length){toast('أضف طالباً واحداً على الأقل');return}
  const bad=rows.find(r=>!(parseInt(toEn(r.abs),10)>0));
- if(bad){EX.sel=bad.id;expRefresh();toast('اكتب عدد الغياب للطالب: '+bad.name.trim());return}
+ if(bad){EX.sel=bad.id;expRefresh(true);toast('اكتب عدد الغياب للطالب: '+bad.name.trim());return}
  if(mode!=='print'&&!libsOK()){toast('تعذّر تحميل مكتبات PDF. تأكد من اتصال الإنترنت ثم أعد فتح الصفحة');return}
  const recs=rows.map(expRec),auto=rows.filter(r=>r.exp.auto&&r.exp.no).length;
  const fin=()=>{
